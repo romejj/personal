@@ -1,0 +1,2 @@
+# personal
+For personal projects
