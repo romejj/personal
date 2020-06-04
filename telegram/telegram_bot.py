@@ -27,18 +27,17 @@ def main():
     # Add event handler that returns start() function when user inputs /start or /help in chat
     @bot.message_handler(commands=["start", "help"])
     def send_welcome(message):
-        bot.reply_to(message, "Recommends food places for lazy and hungry souls :)")
-
-    # @bot.message_handler(commands="where")
-    # def send_instructions(message):
-    #     instruct = bot.send_message(message, "Let me know where you are")
-    #     reply = message.text
-    #     print(reply)
+        bot.reply_to(message, "Recommends food places for lazy and hungry souls :) Type /where to begin")
 
     # Activate the geolocator only with /where command so we don't spam the google API
-    # Get bot to return an error if google api returns error
+    @bot.message_handler(commands=["where"])
+    def send_instructions(message):
+        msg = bot.reply_to(message, "Let me know where you are!")
 
-    @bot.message_handler(func=lambda message: True)
+        # parse next input message to func place_message
+        bot.register_next_step_handler(msg, place_message)
+
+    # Get bot to return an error if google api returns error
     def place_message(message):
         message_text = message.text
 
@@ -46,6 +45,7 @@ def main():
         location = geolocator.geocode(f"{message_text}")
         coordinates = f"{location.latitude}, {location.longitude}"
 
+        # Reply message with recs
         bot.reply_to(message, message_output_place(place_details(coordinates)))
         
     ######################
