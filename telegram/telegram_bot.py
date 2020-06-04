@@ -94,7 +94,7 @@ def main():
                         "vicinity": item["vicinity"]} 
                         for item in places_results]
 
-        place_details = [item for item in place_details if item["rating"] >= 4]
+        place_details = [item for item in place_details if item["rating"] >= 4 if item["price_level"] != 0]
 
         # Randomly returns 5 results
         return random.sample(place_details, 5)
