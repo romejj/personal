@@ -108,7 +108,7 @@ def main():
         place_details = [{"name": item["name"], 
                         "rating": item["rating"] if item.get("rating") else 0,
                         "rating_count": item["user_ratings_total"] if item.get("user_ratings_total") else 0,
-                        "price_level": item["price_level"] if item.get("price_level") else "Unknown", 
+                        "price_level": item["price_level"] if item.get("price_level") else 0, 
                         "vicinity": item["vicinity"]} 
                         for item in places_results]
 
