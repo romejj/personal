@@ -1,27 +1,90 @@
-from telegram.ext import Updater, MessageHandler, Filters
-from telegram.ext import CommandHandler
+import sys
+from datetime import datetime
+import telebot
 import logging
+import googlemaps
+from geopy.geocoders import Nominatim
+import pprint
 
-updater = Updater(token='674969923:AAHd5L-jrWsDFKDn1NZp49dt1J4FeO2-z8k', use_context=True)
-dispatcher = updater.dispatcher
+# Argument check
+if len(sys.argv) != 3:
+    print("Please parse exactly 3 arguments")
+    sys.exit(1)
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                     level=logging.INFO)
+# Import your API keys here
+g_api_key = sys.argv[1]
+t_token = sys.argv[2]
 
-# Add event handler that returns start() function when user inputs /start in chat
-def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Love you cutie!")
+# # Define gmaps Client
+gmaps = googlemaps.Client(key = g_api_key)
+geolocator = Nominatim(user_agent=g_api_key)
 
-start_handler = CommandHandler('start', start)
-dispatcher.add_handler(start_handler)
+# Telegram codes
+# Start telebot
+bot = telebot.TeleBot(t_token)
 
-# Add an event handler that listens for messages and echos them
-def echo(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+def main():
+    # Add event handler that returns start() function when user inputs /start or /help in chat
+    @bot.message_handler(commands=["start", "help"])
+    def send_welcome(message):
+        bot.reply_to(message, "Recommends food places for lazy and hungry souls :)")
 
-echo_handler = MessageHandler(Filters.text & (~Filters.command), echo)
-dispatcher.add_handler(echo_handler)
+    # @bot.message_handler(commands="where")
+    # def send_instructions(message):
+    #     instruct = bot.send_message(message, "Let me know where you are")
+    #     reply = message.text
+    #     print(reply)
 
-# Start the bot
-updater.start_polling()
+    # Activate the geolocator only with /where command so we don't spam the google API
+    # Get bot to return an error if google api returns error
 
+    @bot.message_handler(func=lambda message: True)
+    def place_message(message):
+        message_text = message.text
+
+        # Quick way to obtain longitude and latitude of address using geopy
+        location = geolocator.geocode(f"{message_text}")
+        coordinates = f"{location.latitude}, {location.longitude}"
+
+        bot.reply_to(message, message_output_place(place_details(coordinates)))
+        
+    ######################
+    # Function definitions
+    ######################
+
+    #Extracts place details
+    def place_details(location):
+        places_results = gmaps.places_nearby(location = location, radius = 2400, open_now = True, type = ["cafe", "food", "restaurant"])["results"]
+
+        # We can extract name, rating, user_ratings_total, price_level, and vicinity from above using list comprehension
+        # Rating and user_ratings_total may be missing in some dicts, and we prefill these with 0
+        place_details = [{"name": item["name"], 
+                        "rating": item["rating"] if item.get("rating") else 0, 
+                        "rating_count": item["user_ratings_total"] if item.get("user_ratings_total") else 0, 
+                        "vicinity": item["vicinity"]} 
+                        for item in places_results]
+
+        place_details = [item for item in place_details if item["rating"] >= 4]
+
+        return place_details
+
+    # Converts place details from list to string
+    def message_output_place(place):
+        output = []
+        for detail in place:
+            name = detail["name"]
+            rating = detail["rating"]
+            rating_count = detail["rating_count"]
+            output.append(f"Name: {name} | Rating: {rating} | Rating Count: {rating_count}")
+        
+        # Create a list first then use .join
+        return "\n".join(output)
+
+    # Start the bot
+    bot.polling()
+
+main()
+
+# Save visited places in a DB
+
+# Can pull out favorites places from DB
