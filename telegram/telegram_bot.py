@@ -37,22 +37,28 @@ def main():
         # parse next input message to func place_message
         bot.register_next_step_handler(msg, place_message)
 
-    # Get bot to return an error if google api returns error
     def place_message(message):
-        message_text = message.text
-
         # Quick way to obtain longitude and latitude of address using geopy
-        location = geolocator.geocode(f"{message_text}")
-        coordinates = f"{location.latitude}, {location.longitude}"
+        try:
+            geolocation = coordinates(message.text)
 
-        # Reply message with recs
-        bot.reply_to(message, message_output_place(place_details(coordinates)))
+            # Reply message with recs
+            bot.reply_to(message, message_output_place(place_details(geolocation)))
+
+        # If google API cannot return a result
+        except:
+            bot.reply_to(message, "Please make a valid request")
         
     ######################
     # Function definitions
-    ######################
+    #####################
 
-    #Extracts place details
+    # Extracts coordinates from message input
+    def coordinates(message):
+            location = geolocator.geocode(f"{message}")
+            return f"{location.latitude}, {location.longitude}"
+
+    # Extracts place details
     def place_details(location):
         places_results = gmaps.places_nearby(location = location, radius = 2400, open_now = True, type = ["cafe", "food", "restaurant"])["results"]
 
