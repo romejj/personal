@@ -28,7 +28,10 @@ def main():
     # Add event handler that returns start() function when user inputs /start or /help in chat
     @bot.message_handler(commands=["start", "help"])
     def send_welcome(message):
-        bot.reply_to(message, "Recommends food/drink places for lazy and hungry souls :) Type /where to begin")
+        bot.reply_to(message, """Recommends food/drink places for lazy and hungry souls :) 
+        Type /foodnearby to find food recs near your entered location
+        Type /drinksnearby to find pub recs near your entered location
+        Type /randomfood to find food recs randomly""")
 
     # Activate the geolocator only with /foodnearby or /drinksnearby command so we don't spam the google API
     @bot.message_handler(commands=["foodnearby"])
@@ -41,10 +44,12 @@ def main():
     def food_place_message(message):
         # Quick way to obtain longitude and latitude of address using geopy
         try:
-            geolocation = coordinates(message.text)
+            search_area = coordinates(message.text)
+            search_radius = 2400
+            search_type = ["cafe", "food", "restaurant"]
 
             # Reply message with recs
-            bot.reply_to(message, message_output_place(food_place_details(geolocation)))
+            bot.reply_to(message, message_output_place(place_details(search_area, search_radius, search_type)))
 
         # If google API cannot return a result
         except:
@@ -61,10 +66,12 @@ def main():
     def drinks_place_message(message):
         # Quick way to obtain longitude and latitude of address using geopy
         try:
-            geolocation = coordinates(message.text)
+            search_area = coordinates(message.text)
+            search_radius = 2400
+            search_type = ["bar"]
 
             # Reply message with recs
-            bot.reply_to(message, message_output_place(drink_place_details(geolocation)))
+            bot.reply_to(message, message_output_place(place_details(search_area, search_radius, search_type)))
 
         # If google API cannot return a result
         except:
@@ -74,10 +81,12 @@ def main():
     @bot.message_handler(commands=["randomfood"])
     def randomfood_place_message(message):
         try:
-            random_area = "1.369551, 103.848493"
+            search_area = "1.369551, 103.848493"
+            search_radius = 120000
+            search_type = ["cafe", "food", "restaurant"]
 
             # Reply message with recs
-            bot.reply_to(message, message_output_place(random_food_place_details(random_area)))
+            bot.reply_to(message, message_output_place(place_details(search_area, search_radius, search_type)))
 
         # If google API cannot return a result
         except:
@@ -93,50 +102,12 @@ def main():
             return f"{location.latitude}, {location.longitude}"
 
     # Extracts food place details
-    def food_place_details(location):
-        places_results = gmaps.places_nearby(location = location, radius = 2400, open_now = True, type = ["cafe", "food", "restaurant"])["results"]
+    def place_details(geoarea, radiusspread, category):
+        places_results = gmaps.places_nearby(location = geoarea, radius = radiusspread, open_now = True, type = category)["results"]
 
         # We can extract name, rating, user_ratings_total, price_level, and vicinity from above using list comprehension
         # Exclude those with missing keys
         # Using random.sample to randomly pick up 5 from list
-        place_details = random.sample([{"name": item["name"], 
-                        "rating": item["rating"], 
-                        "rating_count": item["user_ratings_total"],
-                        "price_level": item["price_level"],
-                        "vicinity": item["vicinity"]} 
-                        for item in places_results
-                        if item.get("rating") != None
-                        if item.get("user_ratings_total") != None
-                        if item.get("price_level") != None
-                        if item["rating"] >= 4], 5)
-
-        return place_details
-
-    def random_food_place_details(location):
-        places_results = gmaps.places_nearby(location = location, radius = 12000, open_now = True, type = ["cafe", "food", "restaurant"])["results"]
-
-        # We can extract name, rating, user_ratings_total, price_level, and vicinity from above using list comprehension
-        # Exclude those with missing keys
-        # Using random.sample to randomly pick up 5 from list
-        place_details = random.sample([{"name": item["name"], 
-                        "rating": item["rating"], 
-                        "rating_count": item["user_ratings_total"],
-                        "price_level": item["price_level"],
-                        "vicinity": item["vicinity"]} 
-                        for item in places_results
-                        if item.get("rating") != None
-                        if item.get("user_ratings_total") != None
-                        if item.get("price_level") != None
-                        if item["rating"] >= 4], 5)
-
-        return place_details
-
-    # Extracts drinks place details
-    def drink_place_details(location):
-        places_results = gmaps.places_nearby(location = location, radius = 2400, open_now = True, type = ["bar"])["results"]
-
-        # We can extract name, rating, user_ratings_total, price_level, and vicinity from above using list comprehension
-        # Exclude those with missing keys
         place_details = [{"name": item["name"], 
                         "rating": item["rating"], 
                         "rating_count": item["user_ratings_total"],
@@ -148,7 +119,7 @@ def main():
                         if item.get("price_level") != None
                         if item["rating"] >= 4]
 
-        return place_details
+        return random.sample(place_details, min(len(place_details), 5))
 
     # Converts place details from list to string
     def message_output_place(place):
