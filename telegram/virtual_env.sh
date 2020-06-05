@@ -1,4 +1,12 @@
 #!/bin/bash -xue
+# Argument check
+if [ "$#" -ne 2 ]; then
+    echo "Illegal number of parameters"
+fi
+
+g_api_key=$1
+t_token=$2
+
 # Create virtual env
 python3 -m venv env
 
@@ -12,5 +20,8 @@ source env/bin/activate
 # pip3 install geopy
 # pip3 install prettyprint
 
-# Run python file in virtual env
-python3 telegram_bot.py
+# Run python file in virtual env in background
+nohup python3 telegram_bot.py $g_api_key $t_token
+
+# Kill process
+# pkill -f telegram_bot.py
