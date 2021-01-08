@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# Try to run this before committing to GitHub
 
 import pdfplumber
 import pprint
@@ -68,26 +67,11 @@ def main():
     df_categorized_txns["Date"] = df_categorized_txns["Date"] + " 2020"
 
     # Categorizing txns
-    shopping = re.compile(r'''.*Shopee(pay)?.*
-                        |.*Lazada.*
-                        |.*Zalora.*
-                        |.*Uniqlo.*
-                        |.*Asos.*
-                        |.*Ghbass.*
-                        |.*Decathlon.*
-                        |.*Amazon.*
-                        |.*Watson.*
-                        |.*Guardian.*''', re.I | re.VERBOSE)
-    utilities = re.compile(r".*Liberty Wireless.*|.*Gomo.*", re.I)
-    holiday = re.compile(r".*Agoda*.|.*Scoot.*|.*Hotel.*", re.I)
-    grooming = re.compile(".*Sultans of shave.*", re.I)
-    entertainment = re.compile(r".*GV.*|.*Shaw.*", re.I)
-    others = re.compile(r".* Fee.*|.*Charge.*|.*Interest.*|.*Bank.*|.*Rebate.*", re.I)
-
     df_categorized_txns["Category"] = df_categorized_txns.apply(categorize_txns, axis=1)
 
     # Write into csv
-    df_categorized_txns.to_csv(dest_csv / "2020 transactions.csv")
+    # df_categorized_txns.to_csv(dest_csv / "2020 transactions.csv")
+    df_categorized_txns.to_csv(dest_csv / "2020 transactions test.csv")
 
 # All functions placed at the end for readability
 def filter_legitimate_txns(txns):
@@ -129,6 +113,22 @@ def process_txn_amt(txns):
     return txns
 
 def categorize_txns(s):
+    shopping = re.compile(r'''.*Shopee(pay)?.*
+                        |.*Lazada.*
+                        |.*Zalora.*
+                        |.*Uniqlo.*
+                        |.*Asos.*
+                        |.*Ghbass.*
+                        |.*Decathlon.*
+                        |.*Amazon.*
+                        |.*Watson.*
+                        |.*Guardian.*''', re.I | re.VERBOSE)
+    utilities = re.compile(r".*Liberty Wireless.*|.*Gomo.*", re.I)
+    holiday = re.compile(r".*Agoda*.|.*Scoot.*|.*Hotel.*", re.I)
+    grooming = re.compile(".*Sultans of shave.*", re.I)
+    entertainment = re.compile(r".*GV.*|.*Shaw.*", re.I)
+    others = re.compile(r".* Fee.*|.*Charge.*|.*Interest.*|.*Bank.*|.*Rebate.*", re.I)
+
     if shopping.search(s["Txn Desc"]):  # None if there's no match
         return "Shopping"
     
